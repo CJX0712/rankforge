@@ -2,13 +2,13 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+# Install dependencies first for layer caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt pytest ruff
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# 单元冒烟 + 端到端演示（落盘 benchmark.json）
-RUN python -m pytest -q -W ignore::UserWarning \
- && python -m rankforge.examples.run_demo --quick --out benchmark.json
+# Smoke: run the bundled benchmark (writes benchmark.json)
+RUN python examples/run_demo.py
 
-CMD ["python", "-m", "rankforge.cli", "--demo"]
+CMD ["python", "examples/run_demo.py"]

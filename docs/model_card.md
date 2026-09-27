@@ -1,54 +1,61 @@
-# Model Card — RankForge
+# RankForge — 模型卡（Model Card）
 
-## 模型详情
+## 模型细节
 
-- **名称**：RankForge
-- **类型**：Learning to Rank（列表/成对排序学习）
-- **后端**：LightGBM lambdamart（默认 SOTA）、XGBoost rank:ndcg、纯 numpy RankNet（离线旗舰）
-- **作者**：晨星 · 版本：0.1.0
-
-## 用途（Intended Use）
-
-将「同一 query 下的若干文档」按相关度等级排序，使最相关文档排在前列。适用于搜索召回重排、
-推荐列表排序、问答候选排序等需优化 NDCG/MAP 的场景。
+- **系统**：RankForge v0.1.0（模块化学习排序系统）
+- **作者**：晨星
+- **任务**：Learning-to-Rank（文档给定查询的相关性排序）
+- **后端**：LambdaMART（lightgbm `lambdarank`）、XGBRanker（xgboost `rank:ndcg`）、
+  PointwiseLogistic（sklearn）、RankNet（numpy pairwise）、ListNet（numpy listwise）、
+  Random / Constant 基线
+- **评分语义**：分数越大越靠前
 
 ## 训练数据
 
-- **主数据**：合成 LTR 数据集（默认 200 query × 15 doc × 10 feat）。
-- **生成方式**：相关性潜在 = 非线性函数 of 隐藏线性投影 `w·X`
-  （`latent = (w·X) + 1.2·(w·X)² − 0.3·sin(2·w·X)`）+ 每 query 偏置 + 高斯噪声（SNR=3.0），
-  按 query 归一化到等级 0..4。
-- **切分**：按 query 随机切分 train/val/test（无文档跨集泄漏）。
-- **真实数据**：支持 libsvm ranking 格式（`data/loaders.load_libsvm`）。
+- **来源**：合成 LETOR 风格数据集（`data/synth.make_dataset`）。
+- **规模**：默认 100 queries，每 query 8–20 docs，16 维特征。
+- **标签**：分级相关性 0–4（DCG gain = 2^rel−1）。真实效用函数以**非线性 + 交互项**为主
+  （弱线性项），使线性模型无法充分拟合、树模型获得真实优势。
+- **难度**：35% 查询为"难"查询（弱信号 + 高噪声），形成难度梯度。
+- **切分**：按 query 分组（train 60% / val 20% / test 20%），杜绝跨 query 泄漏。
+- **可复现**：固定 `seed`，数据生成逐位可复现。
 
-## 指标（真实运行 · 3 seed · NDCG@10）
+## 评估指标
 
-| 后端 | NDCG@10 | 说明 |
-|------|---------|------|
-| lambdamart | 0.928 ± 0.004 | 最佳 SOTA |
-| xgboost | 0.901 ± 0.013 | SOTA |
-| ranknet | 0.845 ± 0.014 | 离线旗舰（零依赖） |
-| pointwise | 0.863 ± 0.014 | 强基线 |
-| random | 0.389 ± 0.020 | 下界 |
-| heuristic | 0.424 ± 0.104 | 下界 |
+NDCG@1/3/5/10、MAP、P@5、MRR。所有 ranker 在同一 test 集、同一指标口径下比较。
 
-胜强基线：lambdamart 相对 pointwise **+7.5%**（显著）。
+## 量化结果（3 seeds，mean±std）
 
-## 局限性（Limitations）
+| ranker | NDCG@10 | NDCG@5 | MAP | 备注 |
+|--------|---------|--------|-----|------|
+| LambdaMART | **0.819 ± 0.035** | 0.751 ± 0.036 | 0.956 ± 0.010 | 🏆 SOTA |
+| XGBRanker | 0.811 ± 0.037 | 0.738 ± 0.030 | 0.956 ± 0.012 | SOTA 备选 |
+| PointwiseLogistic | 0.669 ± 0.015 | 0.555 ± 0.010 | 0.914 ± 0.015 | 经典基线 |
+| RankNet | 0.671 ± 0.010 | 0.550 ± 0.010 | 0.910 ± 0.016 | 离线兜底 |
+| ListNet | 0.661 ± 0.014 | 0.540 ± 0.021 | 0.912 ± 0.019 | 离线兜底 |
+| Random | 0.601 ± 0.024 | 0.456 ± 0.013 | 0.869 ± 0.038 | 朴素基线 |
+| Constant | 0.570 ± 0.013 | 0.416 ± 0.023 | 0.872 ± 0.041 | 下界 |
 
-1. **合成基准**：主量化在合成非线性数据上完成；真实搜索引擎数据（MSLR-WEB30K 等）需另测。
-2. **RankNet 规模**：纯 numpy 实现适合中小数据；大规模训练建议用 LightGBM/XGBoost 后端。
-3. **特征假设**：依赖文档级特征；需先有召回/特征工程链路。
-4. **无在线下载**：默认不拉取预训练权重，全部从零训练。
+- **SOTA 对标结论**：LambdaMART 相对经典 PointwiseLogistic 提升 **+0.150 NDCG@10**，均值差
+  （0.150）> 0.5×(std₁+std₂)=0.025，达到简易显著性门槛 → DoD 性能项 ✅。
+- **确定性**：同 seed 两次完整运行，各 ranker NDCG@10 逐位一致（`determinism.identical=true`）。
+- **消融**：同线性架构下列表式(ListNet) vs 点式(最小二乘)训练目标 NDCG@10 差异 ≈ −0.008，
+  结论——在此线性架构上目标函数影响极小，**决定性因素是模型非线性（LambdaMART 的树）**。
+- **失败案例**（≥3，含归因）：见 `benchmark.json → failures`。典型：Random/Constant 无信号致
+  NDCG 塌至下界；Pointwise 因优化分类似然而非列表 NDCG 而落后于 LambdaMART；
+  ListNet 学习率过大（无裁剪）时训练不稳、NDCG 退化。
 
-## 伦理与风险
+## 局限
 
-- 排序系统可能放大训练数据中的偏差；上线前应在真实业务数据上做公平性审计。
-- 本系统仅提供排序能力，不对最终业务决策负责。
+- 数据为**合成**分级相关性，用于可复现对标；真实搜索/推荐日志上相对增益可能不同，但
+  架构、指标口径与离线兜底机制直接可迁移。
+- 树模型（lightgbm/xgboost）为 Tier-0 SOTA，离线兜底（RankNet/ListNet）为教学级线性实现，
+  在强非线性信号上弱于树模型——这是预期的"兜底"定位，非缺陷。
+- 未接入在线预训练权重（遵守"网络可达性约束"），全部本地可跑。
 
-## 复现
+## 伦理与合规
 
-```bash
-python -m rankforge.examples.run_demo --out benchmark.json
-```
-固定 `RankForgeConfig.seed` 与 `requirements.lock.txt`，结果逐位可复现。
+- 无个人数据、无隐私字段；合成数据仅含数值特征。
+- 依赖均为宽松许可证（MIT/BSD/Apache）：lightgbm(BSD-3)、xgboost(Apache-2.0)、
+  scikit-learn(BSD-3)、numpy(BSD-3)、scipy(BSD-3)、pandas(BSD-3)。
+- 提交前已通过密钥/隐私 grep 自查，无密钥或敏感信息泄漏。

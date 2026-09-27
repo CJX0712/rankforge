@@ -1,30 +1,53 @@
-"""pipeline 单测：run / 确定性 / 离线兜底路径。"""
-
-from rankforge.core.config import RankForgeConfig
-from rankforge.pipeline.rank_pipeline import RankPipeline
+from rankforge.core.config import Config
+from rankforge.pipeline.pipeline import RankForgePipeline
 
 
-def _cfg():
-    return RankForgeConfig(n_queries=60, docs_per_query=10, n_features=6, seed=11)
+def _pipe():
+    c = Config(
+        n_queries=20,
+        docs_min=6,
+        docs_max=10,
+        n_features=10,
+        label_noise=0.4,
+        n_seeds=2,
+        seeds=(11, 22),
+    )
+    return RankForgePipeline(c)
 
 
-def test_pipeline_run_single_seed():
-    pipe = RankPipeline(_cfg())
-    rep = pipe.run(seed=11, backends=["ranknet", "pointwise", "random"])
-    assert len(rep.seeds) == 1
-    assert "ranknet" in rep.seeds[0].results
-    assert not rep.seeds[0].results["ranknet"].skipped
+def test_single_seed_rows_present():
+    p = _pipe()
+    res = p.run_single_seed(11)
+    names = [r.ranker for r in res["rows"]]
+    assert "LambdaMART" in names and "ListNet" in names and "PointwiseLogistic" in names
 
 
-def test_pipeline_determinism_ranknet_bitwise():
-    pipe = RankPipeline(_cfg())
-    det = pipe.determinism_check(seed=11, backends=["ranknet"])
-    assert det["ranknet"]["bitwise"] is True
+def test_determinism_two_runs_identical():
+    p = _pipe()
+    r1 = p.benchmark([11, 22])["summary"]
+    r2 = p.benchmark([11, 22])["summary"]
+    for n in r1:
+        if r1[n].get("available"):
+            assert abs(r1[n]["ndcg@10"]["mean"] - r2[n]["ndcg@10"]["mean"]) < 1e-9
 
 
-def test_offline_fallback_runs_without_sota():
-    # 强制只用纯 numpy 后端（离线兜底），不依赖 lightgbm/xgboost
-    pipe = RankPipeline(_cfg())
-    rep = pipe.run(seed=11, backends=["ranknet", "pointwise", "random", "heuristic"])
-    for b in ("ranknet", "pointwise", "random", "heuristic"):
-        assert not rep.seeds[0].results[b].skipped
+def test_ablation_runs():
+    p = _pipe()
+    ab = p.ablation_listwise_vs_pointwise(11)
+    assert "delta" in ab
+
+
+def test_split_is_leakage_free():
+    p = _pipe()
+    res = p.run_single_seed(11)
+    sp = res["split"]
+    tr = {q.query_id for q in sp.train.queries}
+    va = {q.query_id for q in sp.val.queries}
+    te = {q.query_id for q in sp.test.queries}
+    assert tr.isdisjoint(va) and tr.isdisjoint(te) and va.isdisjoint(te)
+
+
+def test_benchmark_aggregates_seeds():
+    p = _pipe()
+    res = p.benchmark([11, 22])
+    assert res["summary"]["LambdaMART"]["n_seeds"] == 2

@@ -4,354 +4,328 @@
   "author": "晨星",
   "config": {
     "seed": 42,
-    "n_features": 10,
-    "n_queries": 200,
-    "docs_per_query": 15,
-    "relevance_snr": 3.0,
-    "nonlinear": 1.2,
-    "test_size": 0.2,
-    "val_size": 0.2,
-    "ks": [
-      1,
-      3,
-      5,
-      10
+    "n_queries": 100,
+    "docs_min": 8,
+    "docs_max": 20,
+    "n_features": 16,
+    "label_noise": 0.6,
+    "hard_query_frac": 0.35,
+    "n_seeds": 3,
+    "seeds": [
+      42,
+      123,
+      2026
     ],
-    "default_backends": [
-      "lambdamart",
-      "xgboost",
-      "ranknet",
-      "pointwise",
-      "random",
-      "heuristic"
-    ],
-    "win_rel_threshold": 0.05
+    "train_frac": 0.6,
+    "val_frac": 0.2,
+    "test_frac": 0.2,
+    "standardize": true
   },
-  "seeds": [
-    {
-      "seed": 42,
-      "results": {
-        "lambdamart": {
-          "backend": "lambdamart",
-          "ndcg": {
-            "1": 0.8800000000000001,
-            "3": 0.9122980377885641,
-            "5": 0.9197055791961581,
-            "10": 0.9274469575735826
-          },
-          "map": 0.9415533627802972,
-          "skipped": false,
-          "note": ""
-        },
-        "xgboost": {
-          "backend": "xgboost",
-          "ndcg": {
-            "1": 0.8166666666666668,
-            "3": 0.8889135063631113,
-            "5": 0.8949547942452799,
-            "10": 0.9060343133776865
-          },
-          "map": 0.9430040391156463,
-          "skipped": false,
-          "note": ""
-        },
-        "ranknet": {
-          "backend": "ranknet",
-          "ndcg": {
-            "1": 0.8100000000000002,
-            "3": 0.8557793496334816,
-            "5": 0.8559379757361694,
-            "10": 0.8402238297800917
-          },
-          "map": 0.94825106686193,
-          "skipped": false,
-          "note": ""
-        },
-        "pointwise": {
-          "backend": "pointwise",
-          "ndcg": {
-            "1": 0.95,
-            "3": 0.9131767845541541,
-            "5": 0.9036267581325074,
-            "10": 0.8830725382729832
-          },
-          "map": 0.9530110622952884,
-          "skipped": false,
-          "note": ""
-        },
-        "random": {
-          "backend": "random",
-          "ndcg": {
-            "1": 0.15833333333333335,
-            "3": 0.19765571425488765,
-            "5": 0.2631404070511662,
-            "10": 0.4038562360185699
-          },
-          "map": 0.6209281777525825,
-          "skipped": false,
-          "note": ""
-        },
-        "heuristic": {
-          "backend": "heuristic",
-          "ndcg": {
-            "1": 0.09166666666666667,
-            "3": 0.15268789953705073,
-            "5": 0.21862749306283372,
-            "10": 0.32121317611811373
-          },
-          "map": 0.6616569271227009,
-          "skipped": false,
-          "note": ""
-        }
+  "sota_statement": "LambdaMART (lightgbm objective='lambdarank') is the established industrial SOTA for learning-to-rank (Burges 2006/2007; standard in web search ranking). XGBRanker (objective='rank:ndcg') is a strong alternative. Pointwise logistic regression is the classic ML baseline. RankNet (pairwise) and ListNet (listwise) are re-implemented in pure numpy as the offline Tier-1 fallback so the system runs with zero downloads. All rankers share the unified 'higher score = better rank' contract and are scored on NDCG@k / MAP / P@5 / MRR over a synthetic LETOR-style graded-relevance dataset.",
+  "summary": {
+    "LambdaMART": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.7342857142857143,
+        "std": 0.06389238874373217
+      },
+      "ndcg@3": {
+        "mean": 0.7254232832771544,
+        "std": 0.03994377307618603
+      },
+      "ndcg@5": {
+        "mean": 0.7512291814974176,
+        "std": 0.036081730786232336
+      },
+      "ndcg@10": {
+        "mean": 0.8191129542943306,
+        "std": 0.035111921166358556
+      },
+      "map": {
+        "mean": 0.9564770175962544,
+        "std": 0.009999067107277916
+      },
+      "p@5": {
+        "mean": 0.9666666666666667,
+        "std": 0.009428090415820694
+      },
+      "mrr": {
+        "mean": 1.0,
+        "std": 0.0
       }
     },
-    {
-      "seed": 143,
-      "results": {
-        "lambdamart": {
-          "backend": "lambdamart",
-          "ndcg": {
-            "1": 0.8633333333333335,
-            "3": 0.9226449196095373,
-            "5": 0.9263846461517875,
-            "10": 0.9321649249307786
-          },
-          "map": 0.939780718537415,
-          "skipped": false,
-          "note": ""
-        },
-        "xgboost": {
-          "backend": "xgboost",
-          "ndcg": {
-            "1": 0.8133333333333332,
-            "3": 0.8987047521260086,
-            "5": 0.9107984581416246,
-            "10": 0.9130964435557101
-          },
-          "map": 0.9298212868480725,
-          "skipped": false,
-          "note": ""
-        },
-        "ranknet": {
-          "backend": "ranknet",
-          "ndcg": {
-            "1": 0.8233333333333335,
-            "3": 0.8733458971306105,
-            "5": 0.8694699994041345,
-            "10": 0.8642144948970021
-          },
-          "map": 0.9544928469072813,
-          "skipped": false,
-          "note": ""
-        },
-        "pointwise": {
-          "backend": "pointwise",
-          "ndcg": {
-            "1": 0.8266666666666668,
-            "3": 0.8691979129832909,
-            "5": 0.8662362644877986,
-            "10": 0.849610490248385
-          },
-          "map": 0.9730439736079617,
-          "skipped": false,
-          "note": ""
-        },
-        "random": {
-          "backend": "random",
-          "ndcg": {
-            "1": 0.12833333333333333,
-            "3": 0.20526572029544407,
-            "5": 0.24156086194544954,
-            "10": 0.40399908515037036
-          },
-          "map": 0.6165431586986646,
-          "skipped": false,
-          "note": ""
-        },
-        "heuristic": {
-          "backend": "heuristic",
-          "ndcg": {
-            "1": 0.11666666666666667,
-            "3": 0.18778576445972475,
-            "5": 0.26567918203752755,
-            "10": 0.38618968773399376
-          },
-          "map": 0.6102732308201058,
-          "skipped": false,
-          "note": ""
-        }
+    "XGBRanker": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.6593650793650795,
+        "std": 0.07504025962357741
+      },
+      "ndcg@3": {
+        "mean": 0.6884298792831335,
+        "std": 0.045802362386588705
+      },
+      "ndcg@5": {
+        "mean": 0.7383300249953368,
+        "std": 0.029544356088344898
+      },
+      "ndcg@10": {
+        "mean": 0.8113748208980716,
+        "std": 0.03703482298555466
+      },
+      "map": {
+        "mean": 0.9563385319397749,
+        "std": 0.011806594904759866
+      },
+      "p@5": {
+        "mean": 0.9700000000000001,
+        "std": 0.008164965809277313
+      },
+      "mrr": {
+        "mean": 1.0,
+        "std": 0.0
       }
     },
-    {
-      "seed": 244,
-      "results": {
-        "lambdamart": {
-          "backend": "lambdamart",
-          "ndcg": {
-            "1": 0.8716666666666667,
-            "3": 0.9007332022347796,
-            "5": 0.9092374625295587,
-            "10": 0.9233051955318853
-          },
-          "map": 0.9314555736646511,
-          "skipped": false,
-          "note": ""
-        },
-        "xgboost": {
-          "backend": "xgboost",
-          "ndcg": {
-            "1": 0.7716666666666667,
-            "3": 0.8352820972751894,
-            "5": 0.8611158727813581,
-            "10": 0.8830615358007087
-          },
-          "map": 0.9236893424036282,
-          "skipped": false,
-          "note": ""
-        },
-        "ranknet": {
-          "backend": "ranknet",
-          "ndcg": {
-            "1": 0.805,
-            "3": 0.8493562975597907,
-            "5": 0.838778089055521,
-            "10": 0.8313424823621073
-          },
-          "map": 0.9329327404572941,
-          "skipped": false,
-          "note": ""
-        },
-        "pointwise": {
-          "backend": "pointwise",
-          "ndcg": {
-            "1": 0.8866666666666667,
-            "3": 0.8889030039888384,
-            "5": 0.8679481928837287,
-            "10": 0.8560814702309854
-          },
-          "map": 0.9620461270156211,
-          "skipped": false,
-          "note": ""
-        },
-        "random": {
-          "backend": "random",
-          "ndcg": {
-            "1": 0.04666666666666667,
-            "3": 0.18451173815477168,
-            "5": 0.2705989472680449,
-            "10": 0.3606131271515213
-          },
-          "map": 0.6559654116276141,
-          "skipped": false,
-          "note": ""
-        },
-        "heuristic": {
-          "backend": "heuristic",
-          "ndcg": {
-            "1": 0.32,
-            "3": 0.3584360072161374,
-            "5": 0.4591887288583448,
-            "10": 0.5659691217851586
-          },
-          "map": 0.7657413509385236,
-          "skipped": false,
-          "note": ""
-        }
+    "PointwiseLogistic": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.5042857142857143,
+        "std": 0.04688159124734997
+      },
+      "ndcg@3": {
+        "mean": 0.509950565412797,
+        "std": 0.011909766281646953
+      },
+      "ndcg@5": {
+        "mean": 0.5549725500155808,
+        "std": 0.009650807064147185
+      },
+      "ndcg@10": {
+        "mean": 0.6690320369210504,
+        "std": 0.014538164388385323
+      },
+      "map": {
+        "mean": 0.9140930488957338,
+        "std": 0.014536803721906499
+      },
+      "p@5": {
+        "mean": 0.9133333333333334,
+        "std": 0.023570226039551553
+      },
+      "mrr": {
+        "mean": 0.9916666666666667,
+        "std": 0.011785113019775804
       }
-    }
-  ],
-  "aggregate_ndcg10": {
-    "lambdamart": {
-      "mean": 0.9276390260120823,
-      "std": 0.0036195182892390988
     },
-    "xgboost": {
-      "mean": 0.9007307642447017,
-      "std": 0.012822367072615677
+    "RankNet": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.4682539682539682,
+        "std": 0.015377995358454402
+      },
+      "ndcg@3": {
+        "mean": 0.5108959112322738,
+        "std": 0.006641346187343557
+      },
+      "ndcg@5": {
+        "mean": 0.5504057062144878,
+        "std": 0.009838082447410594
+      },
+      "ndcg@10": {
+        "mean": 0.6709068144039945,
+        "std": 0.00962297572499747
+      },
+      "map": {
+        "mean": 0.9104671889134544,
+        "std": 0.01649264419332164
+      },
+      "p@5": {
+        "mean": 0.8966666666666668,
+        "std": 0.026246692913372727
+      },
+      "mrr": {
+        "mean": 0.9833333333333334,
+        "std": 0.011785113019775802
+      }
     },
-    "ranknet": {
-      "mean": 0.8452602690130671,
-      "std": 0.013884441943752728
+    "ListNet": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.4468253968253968,
+        "std": 0.08654477153747454
+      },
+      "ndcg@3": {
+        "mean": 0.4993542079520039,
+        "std": 0.014846492179867242
+      },
+      "ndcg@5": {
+        "mean": 0.5396510246263783,
+        "std": 0.020512585177113612
+      },
+      "ndcg@10": {
+        "mean": 0.6610764887949164,
+        "std": 0.014353829817474656
+      },
+      "map": {
+        "mean": 0.9115348549016301,
+        "std": 0.01908692636506571
+      },
+      "p@5": {
+        "mean": 0.9066666666666667,
+        "std": 0.04027681991198195
+      },
+      "mrr": {
+        "mean": 0.975,
+        "std": 0.02041241452319317
+      }
     },
-    "pointwise": {
-      "mean": 0.8629214995841178,
-      "std": 0.014491760087808845
+    "Random": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.366031746031746,
+        "std": 0.06698600764681048
+      },
+      "ndcg@3": {
+        "mean": 0.40082250829179883,
+        "std": 0.03812705307799213
+      },
+      "ndcg@5": {
+        "mean": 0.4556921118847104,
+        "std": 0.013149213774201963
+      },
+      "ndcg@10": {
+        "mean": 0.6011307101836213,
+        "std": 0.024476043602641075
+      },
+      "map": {
+        "mean": 0.8685284741540361,
+        "std": 0.0378592607174659
+      },
+      "p@5": {
+        "mean": 0.85,
+        "std": 0.057154760664940844
+      },
+      "mrr": {
+        "mean": 0.9111111111111111,
+        "std": 0.04631481111259187
+      }
     },
-    "random": {
-      "mean": 0.38948948277348716,
-      "std": 0.02041875015720103
-    },
-    "heuristic": {
-      "mean": 0.42445732854575535,
-      "std": 0.10352029586773746
-    }
-  },
-  "win_over_pointwise": {
-    "passed": true,
-    "sota_best": "lambdamart",
-    "sota_ndcg10_mean": 0.9276,
-    "pointwise_ndcg10_mean": 0.8629,
-    "rel_gain": 0.075,
-    "abs_gain": 0.0647,
-    "significant": true,
-    "threshold": 0.05
-  },
-  "ablation": {
-    "lambdamart_vs_regression": {
-      "lambdarank_ndcg10": 0.9274,
-      "regression_ndcg10": 0.9178,
-      "delta": 0.0096,
-      "note": "列表/成对 LTR 目标直接优化排序，优于逐点回归后排序"
-    },
-    "lightgbm_normalize": {
-      "normalized_ndcg10": 0.9274,
-      "raw_ndcg10": 0.9218,
-      "delta": 0.0056,
-      "note": "StandardScaler 拟合于 train 仅，防止跨 query 尺度泄漏"
-    }
-  },
-  "failure_cases": {
-    "random_ranking": {
-      "ndcg@1": 0.1583,
-      "reason": "无监督随机打分，最优文档排首位概率≈1/docs_per_query"
-    },
-    "pointwise_vs_sota": {
-      "pointwise_ndcg10": 0.8831,
-      "sota_ndcg10": 0.9274,
-      "gap": 0.0444,
-      "reason": "逐点回归忽略文档间序结构，无法建模相对偏好"
-    },
-    "ranknet_underfit": {
-      "full_ndcg10": 0.8402,
-      "epoch1_ndcg10": 0.6055,
-      "gap": 0.2347,
-      "reason": "成对损失未充分收敛，梯度下降步数不足"
+    "Constant": {
+      "available": true,
+      "n_seeds": 3,
+      "ndcg@1": {
+        "mean": 0.3544444444444445,
+        "std": 0.04901498888913954
+      },
+      "ndcg@3": {
+        "mean": 0.36795674594655975,
+        "std": 0.034561656182722035
+      },
+      "ndcg@5": {
+        "mean": 0.41616993651080697,
+        "std": 0.02344276121495289
+      },
+      "ndcg@10": {
+        "mean": 0.5695021159392567,
+        "std": 0.013447687230127056
+      },
+      "map": {
+        "mean": 0.8719707433570182,
+        "std": 0.041226674137554965
+      },
+      "p@5": {
+        "mean": 0.8300000000000001,
+        "std": 0.07788880963698609
+      },
+      "mrr": {
+        "mean": 0.9375,
+        "std": 0.046770717334674285
+      }
     }
   },
   "determinism": {
-    "ranknet": {
-      "run1": 0.84022383,
-      "run2": 0.84022383,
-      "abs_diff": 0.0,
-      "bitwise": true
+    "LambdaMART": {
+      "run1_ndcg10": 0.819112954294,
+      "run2_ndcg10": 0.819112954294,
+      "identical": true
     },
-    "lambdamart": {
-      "run1": 0.92744696,
-      "run2": 0.92744696,
-      "abs_diff": 0.0,
-      "bitwise": true
+    "XGBRanker": {
+      "run1_ndcg10": 0.811374820898,
+      "run2_ndcg10": 0.811374820898,
+      "identical": true
     },
-    "xgboost": {
-      "run1": 0.90603431,
-      "run2": 0.90603431,
-      "abs_diff": 0.0,
-      "bitwise": true
+    "PointwiseLogistic": {
+      "run1_ndcg10": 0.669032036921,
+      "run2_ndcg10": 0.669032036921,
+      "identical": true
     },
-    "pointwise": {
-      "run1": 0.88307254,
-      "run2": 0.88307254,
-      "abs_diff": 0.0,
-      "bitwise": true
+    "RankNet": {
+      "run1_ndcg10": 0.670906814404,
+      "run2_ndcg10": 0.670906814404,
+      "identical": true
+    },
+    "ListNet": {
+      "run1_ndcg10": 0.661076488795,
+      "run2_ndcg10": 0.661076488795,
+      "identical": true
+    },
+    "Random": {
+      "run1_ndcg10": 0.601130710184,
+      "run2_ndcg10": 0.601130710184,
+      "identical": true
+    },
+    "Constant": {
+      "run1_ndcg10": 0.569502115939,
+      "run2_ndcg10": 0.569502115939,
+      "identical": true
     }
-  }
+  },
+  "ablation": {
+    "ranker": "ListNet(listwise) vs LinearPointwise",
+    "ndcg@10_listwise": 0.6511298238117444,
+    "ndcg@10_pointwise_linear": 0.6589014708282813,
+    "delta": -0.007771647016536876,
+    "conclusion": "listwise and pointwise-linear objectives are nearly equivalent on this linear architecture (delta<0); the decisive performance factor is model nonlinearity (LambdaMART's trees), not the training objective"
+  },
+  "failures": [
+    {
+      "case": "Random scorer",
+      "ndcg@10": 0.6011,
+      "cause": "No signal: scores drawn from uniform noise. On queries with several relevant docs the top positions are mostly missed, so NDCG collapses toward the random-ordering floor."
+    },
+    {
+      "case": "Constant scorer",
+      "ndcg@10": 0.5695,
+      "cause": "No learning: every doc scores 0, ranking reduces to input order. Lower bound any learned ranker must beat."
+    },
+    {
+      "case": "PointwiseLogistic under LambdaMART",
+      "pointwise_ndcg10": 0.669,
+      "lambdamart_ndcg10": 0.8191,
+      "gap": 0.1501,
+      "cause": "Pointwise logistic maximizes grade-classification likelihood, not listwise NDCG. It ignores intra-list preference pairs and the graded-top focus that LambdaMART's lambdarank objective optimizes directly."
+    },
+    {
+      "case": "ListNet unstable LR",
+      "lr": 2.0,
+      "ndcg@10": 0.5827,
+      "collapsed": false,
+      "cause": "Without gradient clipping, an excessive learning rate saturates the softmax and the cross-entropy gradient explodes, driving weights toward divergence. NDCG@10 drops from ~0.66 (stable lr=0.05) to 0.5827 — unstable optimization hurts ranking quality, motivating the clipped update."
+    }
+  ],
+  "dos_performance": {
+    "threshold": "LambdaMART ndcg@10 mean > PointwiseLogistic mean (margin>=0.02) + simple significance",
+    "met": true,
+    "lambdamart_ndcg10_mean": 0.8191,
+    "pointwise_ndcg10_mean": 0.669,
+    "margin": 0.1501,
+    "significant": true
+  },
+  "quality_grade": "S",
+  "demo_seconds": 43.09
 }

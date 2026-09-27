@@ -1,7 +1,9 @@
+# RankForge runtime + test dependencies (pinned to match requirements.lock.txt)
+# Full lockfile: requirements.lock.txt (pip freeze)
 numpy==2.5.3
 scipy==1.18.1
 scikit-learn==1.9.1
+pandas==3.0.6
 lightgbm==4.7.0
 xgboost==3.4.1
-optuna==5.0.0
 pytest==9.1.1

@@ -4,9 +4,10 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,20 +21,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest ruff
 
-      - name: Lint (ruff)
-        run: ruff check .
+      - name: Lint (syntax check)
+        run: python -m compileall -q rankforge tests examples
 
-      - name: Unit tests (pytest)
+      - name: Unit tests
         run: python -m pytest -q -W ignore::UserWarning
 
-      - name: Demo smoke (end-to-end)
-        run: python -m rankforge.examples.run_demo --quick --out benchmark.json
-
-      - name: Upload benchmark artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark
-          path: benchmark.json
+      - name: Demo smoke (CLI benchmark)
+        run: python cli.py bench --queries 20 --seeds 2

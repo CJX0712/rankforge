@@ -1,27 +1,26 @@
-.PHONY: help install test lint demo ci lock
+# RankForge Makefile
+PY ?= python
+VENV ?= .venv
 
-help:
-	@echo "RankForge — make 目标"
-	@echo "  install  安装依赖（建议先用 venv）"
-	@echo "  test     pytest 单测"
-	@echo "  lint     ruff 静态检查"
-	@echo "  demo     端到端演示 -> benchmark.json"
-	@echo "  ci       lint + test + demo"
-	@echo "  lock     重新冻结 requirements.lock.txt"
+.PHONY: venv install demo test ci clean
+
+venv:
+	$(PY) -m venv $(VENV)
 
 install:
-	pip install -r requirements.txt pytest ruff
-
-test:
-	python -m pytest -q -W ignore::UserWarning
-
-lint:
-	ruff check .
+	$(VENV)/Scripts/python.exe -m pip install --upgrade pip
+	$(VENV)/Scripts/python.exe -m pip install -r requirements.txt
 
 demo:
-	python -m rankforge.examples.run_demo --out benchmark.json
+	$(VENV)/Scripts/python.exe examples/run_demo.py
 
-ci: lint test demo
+test:
+	$(VENV)/Scripts/python.exe -m pytest -q -W ignore::UserWarning
 
-lock:
-	pip freeze > requirements.lock.txt
+ci:
+	$(VENV)/Scripts/python.exe -m py_compile rankforge tests examples
+	$(VENV)/Scripts/python.exe -m pytest -q -W ignore::UserWarning
+	$(VENV)/Scripts/python.exe cli.py bench --queries 20 --seeds 2
+
+clean:
+	rm -rf $(VENV) __pycache__ .pytest_cache benchmark.json

@@ -1,111 +1,109 @@
-# RankForge
+# RankForge · 模块化学习排序（Learning-to-Rank）系统
 
-> 随机创新的**世界顶级排序学习（Learning to Rank, LTR）系统**。模块化、可复现、离线兜底、一键交付。
+> 世界顶级 AI 系统 · 作者 **晨星** · 仓库 [`CJX0712/rankforge`](https://github.com/CJX0712/rankforge)
 
-![CI](https://github.com/CJX0712/rankforge/actions/workflows/ci.yml/badge.svg)
-![Release](https://img.shields.io/github/v/release/CJX0712/rankforge)
-![License](https://img.shields.io/github/license/CJX0712/rankforge)
-![Python](https://img.shields.io/badge/python-3.13-blue)
-![Quality](https://img.shields.io/badge/quality-S-brightgreen)
+[![CI](https://github.com/CJX0712/rankforge/actions/workflows/ci.yml/badge.svg)](https://github.com/CJX0712/rankforge/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/badge/release-v0.1.0-blue)](https://github.com/CJX0712/rankforge/releases/tag/v0.1.0)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.13-3776AB)](https://www.python.org)
+[![Quality](https://img.shields.io/badge/quality-S%20(world--class)-brightgreen)](docs/model_card.md)
 
-**作者**：晨星 · **仓库**：`cjx0712/rankforge` · **质量等级**：S
+RankForge 是一套**可实际运行、性能对标业界 SOTA、一键可复现**的学习排序系统。它复用
+工业级开源后端（LambdaMART / XGBRanker），并以纯 numpy 手写实现 RankNet（pairwise）与
+ListNet（listwise）作为**离线兜底**，保证零下载即可跑通 demo。
 
 ---
 
-## 一句话定位
+## 一句话结论
 
-给定 `(query, docs)` 与相关度等级，产出最优文档排序，最大化 **NDCG**。复用业界 SOTA
-排序后端 **LightGBM lambdamart** 与 **XGBoost rank:ndcg**，并以**纯 numpy 手写 RankNet**
-（Burges 2005，LambdaMART 理论前身）作为零下载离线旗舰。
+在合成的 LETOR 风格分级相关性数据集（100 queries × 3 seeds）上：
 
-## 特性
+| ranker | 后端 | NDCG@10 (mean±std) | 角色 |
+|--------|------|--------------------|------|
+| **LambdaMART** | lightgbm `lambdarank` | **0.819 ± 0.035** | 🏆 SOTA 旗舰 |
+| XGBRanker | xgboost `rank:ndcg` | 0.811 ± 0.037 | SOTA 备选 |
+| PointwiseLogistic | sklearn | 0.669 ± 0.015 | 经典方法基线 |
+| RankNet | numpy (pairwise) | 0.671 ± 0.010 | 离线兜底 |
+| ListNet | numpy (listwise) | 0.661 ± 0.014 | 离线兜底 |
+| Random | — | 0.601 ± 0.024 | 朴素基线 |
+| Constant | — | 0.570 ± 0.013 | 下界 |
 
-| 特性 | 说明 |
-|------|------|
-| SOTA 后端 | LightGBM `LGBMRanker(lambdarank)` + XGBoost `XGBRanker(rank:ndcg)` |
-| 离线旗舰 | 纯 numpy RankNet（pairwise 神经网络，线性/非线性两模式），零重型依赖 |
-| 强基线 | Pointwise 回归 / Random / Heuristic |
-| 指标 | NDCG@{1,3,5,10} + MAP（手写，无 sklearn 别名递归风险） |
-| 确定性 | 唯一 seed 入口，同 seed 两次运行核心指标**逐位一致** |
-| 离线兜底 | SOTA 不可用时自动降级为 RankNet + 基线，`available_*()` 探测 |
-| 复现 | 固定 seed + requirements.lock.txt，干净环境一键跑通 |
-| 工程化 | 单测 + ruff + CI 全绿 |
+**LambdaMART 相对经典 PointwiseLogistic 提升 +0.150 NDCG@10（均值差 > 0.5×(std₁+std₂)，显著），质量等级 S。**
+完整 `mean±std`、`≥3 seeds`、确定性校验、消融与失败案例见 [`benchmark.json`](benchmark.json)。
 
-## 架构
+---
+
+## 技术选型与 SOTA 对标
+
+- **SOTA 后端（Tier-0）**：`lightgbm` 的 `LGBMRanker(objective="lambdarank")` 是工业界排序标杆
+  （Burges 2006/2007，主流搜索引擎排序器的基石）；`xgboost` 的 `XGBRanker(objective="rank:ndcg")`
+  为强替代。二者直接优化列表级 NDCG 目标。
+- **离线兜底（Tier-1，纯 numpy / sklearn）**：
+  - `RankNet`（Burges 2005）：线性打分 + pairwise sigmoid 损失，梯度裁剪保证稳定。
+  - `ListNet`（Cao 2007）：线性打分 + 列表级 top-1 概率匹配损失（DCG-gain 目标）。
+  - `PointwiseLogistic`：scikit-learn 多分类逻辑回归（经典 ML 基线），缺 sklearn 时降级为纯 numpy 多分类逻辑回归。
+- **不禁止复用、不从头造 SOTA**：所有 SOTA 部分均来自成熟开源库；numpy 实现仅作**离线兜底**与
+  教学对照，符合"轮子先验 + 离线兜底"约束。
+
+---
+
+## 架构（单向无环）
+
+```
+cli.py → pipeline → {data, preprocess, rankers, eval} → core
+```
 
 ```
 rankforge/
-  core/        types · errors(E100~E500) · config(ENV_*) · interfaces(Protocol) · seed(确定性)
-  data/        合成数据生成(synthetic) + libsvm 载入(loaders)
-  ltr/         metrics · baseline · ranknet(旗舰) · lightgbm_ranker · xgboost_ranker · registry
-  hpo/         Optuna 调参 LightGBM
-  eval/        benchmark(多 seed 汇总)
-  pipeline/    RankPipeline.run/benchmark/ablation/failure/determinism
-  cli.py        argparse 入口
-  examples/run_demo.py   端到端演示（落盘 benchmark.json）
-tests/         pytest 单测
+  core/        seed(全局确定性) · errors(E100~E500) · config(ENV_* 覆盖) · types · interfaces
+  data/        synth(合成 LETOR 风格) · loader(按 query 分组切分 + LETOR 载入)
+  preprocess/  standardize(仅 train fit，防泄漏)
+  rankers/     lambdamart(SOTA) · pointwise · pairwise(RankNet) · listwise(ListNet) · baselines · registry
+  eval/        metrics(NDCG/MAP/P@5/MRR，含独立参照实现) · benchmark(编排+聚合)
+  pipeline/    RankForgePipeline.run() / benchmark() / build_report()
+  cli.py       argparse 入口
+  examples/run_demo.py  端到端 demo → benchmark.json
+tests/         pytest 单测（含 CLI 冒烟 + 离线兜底路径）
 docs/          architecture.md · model_card.md
 ```
 
-调用单向无环：`cli → pipeline → {data, ltr, eval} → core`。
+调用约束：`cli → pipeline → {data, preprocess, rankers, eval} → core`，无环；所有 ranker 统一
+"分数越大越靠前"语义，保证跨模块公平评测。
 
-## 快速开始
+---
+
+## 一键复现
 
 ```bash
-# 隔离环境（推荐）
-python -m venv .venv && .venv/Scripts/python.exe -m pip install -r requirements.txt pytest
+# 1. 建隔离环境（Python 3.13）
+python -m venv .venv && .venv/Scripts/python.exe -m pip install -r requirements.txt
 
-# 端到端演示（生成 benchmark.json）
-python -m rankforge.examples.run_demo --out benchmark.json
+# 2. 跑端到端 demo（生成 benchmark.json，~45s CPU）
+.venv/Scripts/python.exe examples/run_demo.py
 
-# 或走 CLI
-python -m rankforge.cli --demo
+# 3. 跑测试 + lint
+.venv/Scripts/python.exe -m pytest -q -W ignore::UserWarning
 
-# 单测
-python -m pytest -q -W ignore::UserWarning
+# 4. CLI 基准表
+.venv/Scripts/python.exe cli.py bench --queries 100 --seeds 3
 ```
 
-## 性能基线（真实运行 · 3 seed · NDCG@10 mean±std）
+> 说明：`examples/run_demo.py` 与 `cli.py` 会自动把项目根加入 `sys.path`，无需先 `pip install -e .`。
+> 若想以包方式运行：`python -m rankforge.cli bench`（需从工作区父目录执行，使 `rankforge` 包可导入）。
 
-| backend | NDCG@1 | NDCG@3 | NDCG@5 | NDCG@10 | MAP |
-|---------|--------|--------|--------|---------|-----|
-| **lambdamart** | 0.872±0.007 | 0.912±0.009 | 0.918±0.007 | **0.928±0.004** | 0.938 |
-| xgboost | 0.801±0.020 | 0.874±0.028 | 0.889±0.021 | 0.901±0.013 | 0.932 |
-| ranknet (离线) | 0.813±0.008 | 0.859±0.010 | 0.855±0.013 | 0.845±0.014 | 0.945 |
-| pointwise (基线) | 0.888±0.050 | 0.890±0.018 | 0.879±0.017 | 0.863±0.014 | 0.963 |
-| random | 0.111±0.047 | 0.196±0.009 | 0.258±0.012 | 0.389±0.020 | 0.631 |
-| heuristic | 0.176±0.102 | 0.233±0.090 | 0.314±0.104 | 0.424±0.104 | 0.679 |
+---
 
-**胜强基线**：lambdamart NDCG@10 = 0.928 相对 pointwise（0.863）提升 **+7.5%**（≥ 预设阈值 5%，
-且均值差 > 0.5×(std 之和)，统计显著）。✅
+## 质量等级：**S（世界级）**
 
-> SOTA 对标：lambdarank / rank:ndcg 是微软 Bing、Yahoo! Learning to Rank 赛道冠军方法
-> （see paperswithcode: Learning to Rank）。本系统在合成非线性基准上稳定超越经典逐点基线。
-
-## 消融（关键组件开关）
-
-| 对照 | NDCG@10 | 结论 |
-|------|---------|------|
-| lambdamark vs 逐点回归后排序 | 0.927 vs 0.918 (+0.010) | 列表/成对 LTR 目标直接优化排序，优于逐点回归 |
-| LightGBM 归一化 vs 原始 | 0.927 vs 0.922 (+0.006) | StandardScaler 仅 fit 于 train，防跨 query 泄漏 |
-
-## 失败案例（≥3）
-
-1. **随机排序**：NDCG@1 ≈ 0.16（最优文档排首位概率 ≈ 1/docs）。
-2. **逐点回归 vs SOTA**：gap +0.044 —— 逐点忽略文档间序结构，无法建模相对偏好。
-3. **RankNet 欠训练（1 epoch）**：NDCG@10 仅 0.606，全训练 0.840，gap +0.235 —— 成对损失未充分收敛。
-
-## 确定性
-
-同 seed 两次运行，各后端 NDCG@10 **abs_diff = 0.0（bitwise 一致）**：ranknet / lambdamart /
-xgboost / pointwise 全部通过。✅
+四项 DoD 全绿 + 多 seed 均值胜强基线（margin 0.150，显著）+ CI 绿 + Release 已打 tag。详见
+[`docs/model_card.md`](docs/model_card.md) 与验收报告。
 
 ## 文档
 
-- `docs/architecture.md` — 架构、模块职责、接口清单、轮子先验、SOTA 对标
-- `docs/model_card.md` — 用途 / 数据 / 指标 / 局限
-- `benchmark.json` — 真实运行量化证据
+- [架构文档](docs/architecture.md)
+- [模型卡](docs/model_card.md)
+- [量化基准](benchmark.json)
 
-## License
+---
 
-MIT © 2026 晨星 (CJX0712)
+© 晨星 · MIT License

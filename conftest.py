@@ -1,5 +1,8 @@
-"""pytest 根目录配置：将仓库根加入 sys.path 以便 import rankforge。"""
-import os
+"""conftest.py — ensure the ``rankforge`` package is importable in tests."""
 import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(__file__))
+ROOT = Path(__file__).resolve().parent
+# project root (the ``rankforge`` package dir) and its parent (workspace)
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT.parent))
