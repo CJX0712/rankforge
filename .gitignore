@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# 缓存
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# 数据缓存 / 模型权重（非必须交付物）
+data_cache/
+*.ckpt
+*.pt
+*.bin
+
+# 密钥 / 环境
+.env
+*.key
+secrets.json
+
+# 日志
+*.log
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+
+# 注意：benchmark.json 为必需交付物，不在此忽略。
